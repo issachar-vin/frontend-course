@@ -65,7 +65,7 @@ function AssignmentView({
     () => buildFiles(code, assignment.tests),
     [code, assignment.tests],
   )
-  const visibleFiles = Object.keys(code)
+  const visibleFiles = useMemo(() => Object.keys(code), [code])
   const activeFile = visibleFiles[0]
   const instanceKey = `${assignment.slug}:${mode}:${resetNonce}`
 

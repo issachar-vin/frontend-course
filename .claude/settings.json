@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make verify *)",
+      "Bash(BASE=http://localhost:5174 node check.mjs)"
+    ]
+  }
+}

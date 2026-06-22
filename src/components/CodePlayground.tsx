@@ -4,6 +4,7 @@ import {
   SandpackCodeEditor,
   SandpackPreview,
   SandpackTests,
+  useErrorMessage,
 } from '@codesandbox/sandpack-react'
 import type {
   SandpackFiles,
@@ -43,20 +44,23 @@ const theme: SandpackTheme = {
   },
 }
 
-const testDeps = {
-  '@testing-library/react': 'latest',
-  '@testing-library/dom': 'latest',
+// Hoisted to module scope so its identity is stable across renders — a changing
+// customSetup prop makes SandpackProvider re-initialize and wipe the editor.
+const customSetup = {
+  dependencies: {
+    '@testing-library/react': 'latest',
+    '@testing-library/dom': 'latest',
+  },
 }
 
 type RightTab = 'preview' | 'tests'
 
 interface Props {
   assignment: Assignment
-  /** Replace the editor contents with these files (e.g. solution). Identity change forces a remount. */
   files: SandpackFiles
   visibleFiles: string[]
   activeFile: string
-  /** Remount key so swapping starter/solution resets Sandpack state. */
+  /** Remount key so swapping starter/solution or resetting clears Sandpack state. */
   instanceKey: string
   onTestsComplete?: (passed: boolean) => void
 }
@@ -71,18 +75,31 @@ export function CodePlayground({
 }: Props) {
   const [tab, setTab] = useState<RightTab>('preview')
 
-  const provider = useMemo(
-    () => (
+  // Stable options identity so tab changes / parent re-renders never reset Sandpack.
+  const options = useMemo(
+    () => ({
+      visibleFiles,
+      activeFile,
+      autorun: true,
+      autoReload: true,
+      recompileMode: 'delayed' as const,
+      recompileDelay: 300,
+    }),
+    [visibleFiles, activeFile],
+  )
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <SandpackProvider
         key={instanceKey}
         theme={theme}
         template={assignment.template}
         files={files}
-        customSetup={{ dependencies: testDeps }}
-        options={{ visibleFiles, activeFile }}
+        customSetup={customSetup}
+        options={options}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-[70vh] min-h-[480px]">
-          <div className="border-r border-border min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-[70vh] min-h-[480px]">
+          <div className="min-h-0 border-b border-border lg:border-b-0 lg:border-r">
             <SandpackCodeEditor
               showLineNumbers
               showTabs
@@ -90,25 +107,36 @@ export function CodePlayground({
               style={{ height: '100%' }}
             />
           </div>
-          <div className="flex flex-col min-h-0">
+          <div className="flex min-h-0 flex-col">
             <div className="flex items-center gap-1 border-b border-border bg-surface px-2 py-1.5">
-              <TabButton active={tab === 'preview'} onClick={() => setTab('preview')}>
+              <TabButton
+                active={tab === 'preview'}
+                onClick={() => setTab('preview')}
+              >
                 Live Preview
               </TabButton>
               <TabButton active={tab === 'tests'} onClick={() => setTab('tests')}>
                 Tests
               </TabButton>
             </div>
-            <div className="flex-1 min-h-0" hidden={tab !== 'preview'}>
+            {/* Both panes stay mounted; toggled with display so state and the
+                live bundle are preserved when switching tabs. */}
+            <div
+              className="min-h-0 flex-1"
+              style={{ display: tab === 'preview' ? 'block' : 'none' }}
+            >
               <SandpackPreview
                 showOpenInCodeSandbox={false}
                 showRefreshButton
+                showSandpackErrorOverlay
                 style={{ height: '100%' }}
               />
             </div>
-            <div className="flex-1 min-h-0" hidden={tab !== 'tests'}>
+            <div
+              className="min-h-0 flex-1"
+              style={{ display: tab === 'tests' ? 'block' : 'none' }}
+            >
               <SandpackTests
-                key={instanceKey}
                 showVerboseButton
                 showWatchButton={false}
                 onComplete={(specs) => {
@@ -120,16 +148,24 @@ export function CodePlayground({
             </div>
           </div>
         </div>
+        <ErrorBanner onShowPreview={() => setTab('preview')} />
       </SandpackProvider>
-    ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [instanceKey, tab],
-  )
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-      {provider}
     </div>
+  )
+}
+
+/** Surfaces compile/runtime errors from the student's code, regardless of tab. */
+function ErrorBanner({ onShowPreview }: { onShowPreview: () => void }) {
+  const error = useErrorMessage()
+  if (!error) return null
+  return (
+    <button
+      onClick={onShowPreview}
+      className="block w-full border-t border-danger/40 bg-danger/10 px-4 py-2 text-left text-sm text-danger"
+    >
+      <span className="font-semibold">Error:</span>{' '}
+      <span className="font-mono">{error}</span>
+    </button>
   )
 }
 
@@ -148,7 +184,7 @@ function TabButton({
       className={`rounded-md px-3 py-1 text-sm font-medium transition ${
         active
           ? 'bg-surface-2 text-brand'
-          : 'text-muted hover:text-ink hover:bg-surface-2'
+          : 'text-muted hover:bg-surface-2 hover:text-ink'
       }`}
     >
       {children}
