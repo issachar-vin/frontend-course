@@ -4,7 +4,6 @@ import {
   SandpackCodeEditor,
   SandpackPreview,
   SandpackTests,
-  useErrorMessage,
 } from '@codesandbox/sandpack-react'
 import type {
   SandpackFiles,
@@ -136,36 +135,25 @@ export function CodePlayground({
               className="min-h-0 flex-1"
               style={{ display: tab === 'tests' ? 'block' : 'none' }}
             >
-              <SandpackTests
-                showVerboseButton
-                showWatchButton={false}
-                onComplete={(specs) => {
-                  const { total, pass } = tally(specs)
-                  if (total > 0) onTestsComplete?.(pass === total)
-                }}
-                style={{ height: '100%' }}
-              />
+              {/* Mounted only while the Tests tab is open: SandpackTests auto-runs
+                  on mount, and a failing run sets Sandpack's global error state,
+                  which would otherwise blanket the live preview. */}
+              {tab === 'tests' && (
+                <SandpackTests
+                  showVerboseButton
+                  showWatchButton={false}
+                  onComplete={(specs) => {
+                    const { total, pass } = tally(specs)
+                    if (total > 0) onTestsComplete?.(pass === total)
+                  }}
+                  style={{ height: '100%' }}
+                />
+              )}
             </div>
           </div>
         </div>
-        <ErrorBanner onShowPreview={() => setTab('preview')} />
       </SandpackProvider>
     </div>
-  )
-}
-
-/** Surfaces compile/runtime errors from the student's code, regardless of tab. */
-function ErrorBanner({ onShowPreview }: { onShowPreview: () => void }) {
-  const error = useErrorMessage()
-  if (!error) return null
-  return (
-    <button
-      onClick={onShowPreview}
-      className="block w-full border-t border-danger/40 bg-danger/10 px-4 py-2 text-left text-sm text-danger"
-    >
-      <span className="font-semibold">Error:</span>{' '}
-      <span className="font-mono">{error}</span>
-    </button>
   )
 }
 

@@ -221,8 +221,12 @@ function AssignmentView({
               ) : (
                 <span>
                   Edit the code, then open the{' '}
-                  <span className="font-medium text-brand">Tests</span> tab and
-                  run them.
+                  <span className="font-medium text-brand">Tests</span> tab to
+                  check it.{' '}
+                  <span className="text-muted/70">
+                    (First load compiles in your browser — give it a few
+                    seconds.)
+                  </span>
                 </span>
               )}
             </div>

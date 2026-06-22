@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(make verify *)",
-      "Bash(BASE=http://localhost:5174 node check.mjs)"
+      "Bash(BASE=http://localhost:5174 node check.mjs)",
+      "Bash(BASE=http://localhost:5173 node net.mjs)",
+      "Bash(BASE=http://localhost:5173 node state.mjs)",
+      "Bash(BASE=http://localhost:5173 node live.mjs)",
+      "Bash(BASE=http://localhost:5173 node loop.mjs)"
     ]
   }
 }
