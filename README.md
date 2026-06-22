@@ -36,11 +36,16 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan and authoring order.
 ## Run it
 
 ```bash
-npm install
-npm run dev      # start the dev server
-npm run build    # typecheck + production build
-npm run lint     # lint
+make install   # install dependencies
+make dev       # start the dev server (alias: make run)
+make build     # typecheck + production build
+make lint      # lint
+make verify    # validate every assignment's tests
+make check     # lint + build + verify
 ```
+
+Run `make help` to list all targets. Prefer npm? The scripts are equivalent:
+`npm install`, `npm run dev`, `npm run build`, `npm run lint`, `npm run verify:content`.
 
 > The live editor uses Sandpack's hosted bundler, so an internet connection is
 > needed to run/preview assignment code.
