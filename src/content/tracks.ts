@@ -19,9 +19,9 @@ function plannedTrack(
     tagline,
     status: 'planned',
     description: `The **${title}** track is on the roadmap. The React track is the proven
-template; once its format is finalized, this track will be authored the same way:
-~8–12 hands-on assignments, each with a starter, live preview, automated tests,
-and a reference solution. See \`docs/ROADMAP.md\`.`,
+template; this track will be authored the same way: a short sequence of
+multi-step **projects** that teach concepts in context, each with a live preview,
+automated checks per step, and reference solutions. See \`docs/ROADMAP.md\`.`,
     assignments: [],
   }
 }

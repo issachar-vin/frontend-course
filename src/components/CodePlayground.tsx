@@ -1,15 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   SandpackProvider,
   SandpackCodeEditor,
   SandpackPreview,
   SandpackTests,
+  useSandpack,
 } from '@codesandbox/sandpack-react'
 import type {
   SandpackFiles,
   SandpackTheme,
 } from '@codesandbox/sandpack-react'
-import type { Assignment } from '../types'
+import type { Assignment, FileMap } from '../types'
 
 const theme: SandpackTheme = {
   colors: {
@@ -62,6 +63,8 @@ interface Props {
   /** Remount key so swapping starter/solution or resetting clears Sandpack state. */
   instanceKey: string
   onTestsComplete?: (passed: boolean) => void
+  /** Reports the current contents of the editable files (for carry-forward / persistence). */
+  onFilesChange?: (files: FileMap) => void
 }
 
 export function CodePlayground({
@@ -71,6 +74,7 @@ export function CodePlayground({
   activeFile,
   instanceKey,
   onTestsComplete,
+  onFilesChange,
 }: Props) {
   const [tab, setTab] = useState<RightTab>('preview')
 
@@ -97,6 +101,9 @@ export function CodePlayground({
         customSetup={customSetup}
         options={options}
       >
+        {onFilesChange && (
+          <FilesSync visibleFiles={visibleFiles} onFilesChange={onFilesChange} />
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 h-[70vh] min-h-[480px]">
           <div className="min-h-0 border-b border-border lg:border-b-0 lg:border-r">
             <SandpackCodeEditor
@@ -155,6 +162,29 @@ export function CodePlayground({
       </SandpackProvider>
     </div>
   )
+}
+
+/**
+ * Reports the live contents of the editable (visible) files whenever they change.
+ * Renders nothing; lives inside the provider to access Sandpack's file state.
+ */
+function FilesSync({
+  visibleFiles,
+  onFilesChange,
+}: {
+  visibleFiles: string[]
+  onFilesChange: (files: FileMap) => void
+}) {
+  const { sandpack } = useSandpack()
+  useEffect(() => {
+    const out: FileMap = {}
+    for (const path of visibleFiles) {
+      const file = sandpack.files[path]
+      if (file) out[path] = file.code
+    }
+    onFilesChange(out)
+  }, [sandpack.files, visibleFiles, onFilesChange])
+  return null
 }
 
 function TabButton({
