@@ -1,9 +1,11 @@
 import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { getTrack } from '../content/tracks'
 import { getStages } from '../types'
 import { useProgress } from '../hooks/useProgress'
 import { Markdown } from '../components/Markdown'
 import { DifficultyBadge, StatusBadge } from '../components/ui'
+import { TrackIcon } from '../lib/icons'
 import { NotFound } from './NotFound'
 
 export function TrackPage() {
@@ -15,12 +17,17 @@ export function TrackPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-8 py-12">
-      <Link to="/" className="text-sm text-muted hover:text-ink">
-        ← All tracks
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink"
+      >
+        <ArrowLeft className="h-4 w-4" /> All tracks
       </Link>
       <header className="mt-4 mb-8">
         <div className="flex items-center gap-3">
-          <span className="text-4xl">{track.icon}</span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2 text-brand">
+            <TrackIcon slug={track.slug} className="h-7 w-7" />
+          </span>
           <h1 className="text-3xl font-bold tracking-tight">{track.title}</h1>
         </div>
         <div className="mt-4">

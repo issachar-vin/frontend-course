@@ -65,8 +65,6 @@ export interface Track {
   tagline: string
   /** Longer description rendered as Markdown on the track page. */
   description: string
-  /** Tech accent emoji/icon shown in nav. */
-  icon: string
   status: 'available' | 'planned'
   assignments: Assignment[]
 }

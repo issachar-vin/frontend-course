@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   SandpackProvider,
   SandpackCodeEditor,
@@ -6,42 +6,24 @@ import {
   SandpackTests,
   useSandpack,
 } from '@codesandbox/sandpack-react'
-import type {
-  SandpackFiles,
-  SandpackTheme,
-} from '@codesandbox/sandpack-react'
+import type { SandpackFiles } from '@codesandbox/sandpack-react'
+import { Moon, Sun } from 'lucide-react'
 import type { Assignment, FileMap } from '../types'
+import { useTheme } from '../hooks/useTheme'
+import { usePersistentState } from '../hooks/usePersistentState'
+import { getTheme, sandpackThemeFor } from '../lib/themes'
 
-const theme: SandpackTheme = {
-  colors: {
-    surface1: '#121723',
-    surface2: '#1a2030',
-    surface3: '#273043',
-    clickable: '#97a0b5',
-    base: '#e6e9ef',
-    disabled: '#5a6478',
-    hover: '#ffffff',
-    accent: '#61dafb',
-    error: '#f87171',
-    errorSurface: '#2a1414',
-  },
-  syntax: {
-    plain: '#e6e9ef',
-    comment: { color: '#5a6478', fontStyle: 'italic' },
-    keyword: '#61dafb',
-    tag: '#7ee787',
-    punctuation: '#97a0b5',
-    definition: '#d2a8ff',
-    property: '#79c0ff',
-    static: '#fbbf24',
-    string: '#a5d6ff',
-  },
-  font: {
-    body: 'ui-sans-serif, system-ui, sans-serif',
-    mono: 'ui-monospace, SFMono-Regular, Consolas, monospace',
-    size: '13px',
-    lineHeight: '1.6',
-  },
+// Base styles the react-ts template ships in styles.css; we keep them and add a
+// preview background on top, so the preview can match the app's dark theme.
+const PREVIEW_BASE_CSS =
+  'body{font-family:sans-serif;-webkit-font-smoothing:auto;text-rendering:optimizeLegibility}h1{font-size:1.5rem}'
+
+/** Low-specificity background so a learner's own styles still override it. */
+function previewCssFor(dark: boolean, surface: string, ink: string) {
+  const bg = dark
+    ? `body{background:${surface};color:${ink}}`
+    : 'body{background:#ffffff;color:#1a1a1a}'
+  return PREVIEW_BASE_CSS + bg
 }
 
 // Hoisted to module scope so its identity is stable across renders — a changing
@@ -77,6 +59,24 @@ export function CodePlayground({
   onFilesChange,
 }: Props) {
   const [tab, setTab] = useState<RightTab>('preview')
+  const { themeId } = useTheme()
+  const theme = useMemo(() => sandpackThemeFor(themeId), [themeId])
+  const [previewDark, setPreviewDark] = usePersistentState(
+    'fe-course.ui.preview-dark',
+    true,
+  )
+
+  const palette = getTheme(themeId).palette
+  const previewCss = previewCssFor(previewDark, palette.surface, palette.ink)
+
+  // The preview background lives in a hidden /styles.css (imported by the template
+  // entry). Seed it once and keep it out of the `files` prop identity so toggling
+  // it never resets the editor — a child updates it live via updateFile instead.
+  const [initialCss] = useState(previewCss)
+  const filesWithPreviewStyle = useMemo(
+    () => ({ ...files, '/styles.css': { code: initialCss, hidden: true } }),
+    [files, initialCss],
+  )
 
   // Stable options identity so tab changes / parent re-renders never reset Sandpack.
   const options = useMemo(
@@ -92,19 +92,21 @@ export function CodePlayground({
   )
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="h-full overflow-hidden rounded-xl border border-border bg-surface">
       <SandpackProvider
         key={instanceKey}
         theme={theme}
         template={assignment.template}
-        files={files}
+        files={filesWithPreviewStyle}
         customSetup={customSetup}
         options={options}
+        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
       >
+        <PreviewBackground css={previewCss} />
         {onFilesChange && (
           <FilesSync visibleFiles={visibleFiles} onFilesChange={onFilesChange} />
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-2 h-[70vh] min-h-[480px]">
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
           <div className="min-h-0 border-b border-border lg:border-b-0 lg:border-r">
             <SandpackCodeEditor
               showLineNumbers
@@ -124,6 +126,22 @@ export function CodePlayground({
               <TabButton active={tab === 'tests'} onClick={() => setTab('tests')}>
                 Tests
               </TabButton>
+              <button
+                onClick={() => setPreviewDark((d) => !d)}
+                title={
+                  previewDark
+                    ? 'Preview background: dark (click for light)'
+                    : 'Preview background: light (click for dark)'
+                }
+                aria-label="Toggle preview background"
+                className="ml-auto rounded-md p-1.5 text-muted transition hover:bg-surface-2 hover:text-ink"
+              >
+                {previewDark ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+              </button>
             </div>
             {/* Both panes stay mounted; toggled with display so state and the
                 live bundle are preserved when switching tabs. */}
@@ -162,6 +180,22 @@ export function CodePlayground({
       </SandpackProvider>
     </div>
   )
+}
+
+/**
+ * Live-updates the hidden /styles.css that backs the preview, so toggling the
+ * preview background (or switching app theme) restyles the preview without
+ * touching the `files` prop — which would reset the editor.
+ */
+function PreviewBackground({ css }: { css: string }) {
+  const { sandpack } = useSandpack()
+  const applied = useRef<string | null>(null)
+  useEffect(() => {
+    if (applied.current === css) return
+    applied.current = css
+    sandpack.updateFile('/styles.css', css, true)
+  }, [css, sandpack])
+  return null
 }
 
 /**

@@ -1,14 +1,26 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  CircleCheckBig,
+  GripVertical,
+} from 'lucide-react'
 import type { SandpackFiles } from '@codesandbox/sandpack-react'
 import { getTrack } from '../content/tracks'
 import { getStages, type Assignment, type FileMap, type Track } from '../types'
 import { setStatus, setStage, useProgress } from '../hooks/useProgress'
+import { usePersistentState } from '../hooks/usePersistentState'
 import { loadCode, saveCode } from '../lib/codeStore'
 import { CodePlayground } from '../components/CodePlayground'
 import { Markdown } from '../components/Markdown'
 import { DifficultyBadge } from '../components/ui'
+import { TrackIcon } from '../lib/icons'
 import { NotFound } from './NotFound'
+
+const BRIEF_MIN = 280
+const BRIEF_MAX = 680
 
 export function AssignmentPage() {
   const { trackSlug, assignmentSlug } = useParams()
@@ -61,6 +73,10 @@ function AssignmentView({
   const [hintsShown, setHintsShown] = useState(0)
   const [solutionRevealed, setSolutionRevealed] = useState(false)
   const [justPassed, setJustPassed] = useState(false)
+  const [briefWidth, setBriefWidth] = usePersistentState(
+    'fe-course.ui.brief-width',
+    380,
+  )
   const [baseFiles, setBaseFiles] = useState<FileMap>(
     () =>
       loadCode(track.slug, assignment.slug, stageIndex) ??
@@ -146,14 +162,36 @@ function AssignmentView({
     setJustPassed(false)
   }
 
+  function startBriefResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = briefWidth
+    const onMove = (ev: MouseEvent) => {
+      const w = startW + (ev.clientX - startX)
+      setBriefWidth(Math.min(BRIEF_MAX, Math.max(BRIEF_MIN, w)))
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+    }
+    document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
   return (
     <div className="flex h-full flex-col">
       <header className="border-b border-border bg-surface px-6 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs text-muted">
-              <Link to={`/track/${track.slug}`} className="hover:text-ink">
-                {track.icon} {track.title}
+              <Link
+                to={`/track/${track.slug}`}
+                className="inline-flex items-center gap-1 hover:text-ink"
+              >
+                <TrackIcon slug={track.slug} className="h-3.5 w-3.5" />
+                {track.title}
               </Link>
               <span>/</span>
               <span>
@@ -166,8 +204,8 @@ function AssignmentView({
               </h1>
               <DifficultyBadge difficulty={assignment.difficulty} />
               {status === 'passed' && (
-                <span className="text-sm font-medium text-success">
-                  ✓ Completed
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-success">
+                  <Check className="h-4 w-4" /> Completed
                 </span>
               )}
             </div>
@@ -176,26 +214,29 @@ function AssignmentView({
             {prev && (
               <Link
                 to={`/track/${track.slug}/${prev.slug}`}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:text-ink"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:text-ink"
               >
-                ← Prev
+                <ChevronLeft className="h-4 w-4" /> Prev
               </Link>
             )}
             {next && (
               <Link
                 to={`/track/${track.slug}/${next.slug}`}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:text-ink"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:text-ink"
               >
-                Next →
+                Next <ChevronRight className="h-4 w-4" />
               </Link>
             )}
           </div>
         </div>
       </header>
 
-      <div className="grid flex-1 grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[380px_1fr]">
+      <div
+        className="flex flex-1 flex-col overflow-hidden lg:flex-row"
+        style={{ ['--brief-w' as string]: `${briefWidth}px` }}
+      >
         {/* Brief panel */}
-        <div className="overflow-y-auto border-r border-border px-6 py-6">
+        <div className="max-h-[42vh] w-full shrink-0 overflow-y-auto border-b border-border px-6 py-6 lg:max-h-none lg:min-h-0 lg:w-[var(--brief-w)] lg:border-b-0">
           {multi && (
             <StageTracker
               stages={stages}
@@ -217,7 +258,7 @@ function AssignmentView({
             <ul className="space-y-1.5">
               {assignment.learningObjectives.map((o) => (
                 <li key={o} className="flex gap-2 text-sm text-muted">
-                  <span className="text-brand">›</span>
+                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                   <span>{o}</span>
                 </li>
               ))}
@@ -264,16 +305,17 @@ function AssignmentView({
                 {mode === 'solution' ? (
                   <button
                     onClick={backToMyCode}
-                    className="w-full rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-2"
+                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-2"
                   >
-                    ← Back to my code
+                    <ChevronLeft className="h-4 w-4" /> Back to my code
                   </button>
                 ) : (
                   <button
                     onClick={loadSolution}
-                    className="w-full rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-canvas hover:bg-brand-strong"
+                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-canvas hover:bg-brand-strong"
                   >
-                    Load solution into the editor →
+                    Load solution into the editor
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 )}
                 {Object.entries(stage.solution).map(([path, content]) => (
@@ -291,8 +333,21 @@ function AssignmentView({
           </section>
         </div>
 
+        {/* Draggable divider (desktop only) — a thin line with a grip knob, so
+            it reads as a resize control, not the brief pane's scrollbar. */}
+        <div
+          onMouseDown={startBriefResize}
+          title="Drag to resize"
+          className="group relative hidden w-2 shrink-0 cursor-col-resize items-center justify-center lg:flex"
+        >
+          <span className="h-full w-px bg-border transition-colors group-hover:bg-brand" />
+          <span className="pointer-events-none absolute top-1/2 left-1/2 flex h-7 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded border border-border bg-surface-2 text-muted group-hover:border-brand group-hover:text-brand">
+            <GripVertical className="h-3.5 w-3.5" />
+          </span>
+        </div>
+
         {/* Playground panel */}
-        <div className="flex flex-col overflow-y-auto px-4 py-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-4 py-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm text-muted">
               {mode === 'solution' ? (
@@ -322,41 +377,48 @@ function AssignmentView({
           {justPassed && mode === 'work' && (
             <div className="mb-3 rounded-lg border border-success/40 bg-success/10 px-4 py-2 text-sm font-medium text-success">
               {isLastStage ? (
-                <>
-                  ✓ All tests passed —{' '}
+                <span className="inline-flex flex-wrap items-center gap-1">
+                  <CircleCheckBig className="h-4 w-4" /> All tests passed —{' '}
                   {multi ? 'project complete!' : 'assignment complete!'}{' '}
                   {next && (
                     <Link
                       to={`/track/${track.slug}/${next.slug}`}
-                      className="underline"
+                      className="inline-flex items-center gap-1 underline"
                     >
-                      Continue to “{next.title}” →
+                      Continue to “{next.title}”
+                      <ChevronRight className="h-4 w-4" />
                     </Link>
                   )}
-                </>
+                </span>
               ) : (
                 <span className="flex items-center justify-between gap-3">
-                  <span>✓ Step {stageIndex + 1} complete!</span>
+                  <span className="inline-flex items-center gap-1">
+                    <CircleCheckBig className="h-4 w-4" /> Step {stageIndex + 1}{' '}
+                    complete!
+                  </span>
                   <button
                     onClick={advanceStage}
-                    className="rounded-md bg-success/20 px-3 py-1 font-semibold text-success hover:bg-success/30"
+                    className="inline-flex items-center gap-1 rounded-md bg-success/20 px-3 py-1 font-semibold text-success hover:bg-success/30"
                   >
-                    Next step → {stages[stageIndex + 1].title}
+                    Next step <ChevronRight className="h-4 w-4" />{' '}
+                    {stages[stageIndex + 1].title}
                   </button>
                 </span>
               )}
             </div>
           )}
 
-          <CodePlayground
-            assignment={assignment}
-            files={files}
-            visibleFiles={visibleFiles}
-            activeFile={activeFile}
-            instanceKey={instanceKey}
-            onTestsComplete={handleTestsComplete}
-            onFilesChange={mode === 'work' ? onFilesChange : undefined}
-          />
+          <div className="min-h-[420px] flex-1 lg:min-h-0">
+            <CodePlayground
+              assignment={assignment}
+              files={files}
+              visibleFiles={visibleFiles}
+              activeFile={activeFile}
+              instanceKey={instanceKey}
+              onTestsComplete={handleTestsComplete}
+              onFilesChange={mode === 'work' ? onFilesChange : undefined}
+            />
+          </div>
         </div>
       </div>
     </div>
