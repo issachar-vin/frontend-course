@@ -1,126 +1,109 @@
 # Roadmap — Frontend Mastery Platform
 
-This document is the plan for growing the platform from the **React track** (v1)
-into a full hands-on frontend curriculum.
+The platform teaches by **building real projects**. A track is a sequence of
+projects; each project is a multi-stage assignment that introduces concepts in
+context, one small step at a time. There are no standalone "drill" exercises —
+you learn a concept by using it to build something that works.
 
-## Guiding principle
+## Guiding principles
 
-> Prove the format on one track, then mass-produce content against a stable
+> Teach concepts inside projects, not in isolation. Each project ends in a
+> tangible, working app. Later projects compound the skills of earlier ones.
+
+> Prove the format on one project, then mass-produce content against a stable
 > template.
 
-The React track is that template. Every assignment is a self-contained unit:
+Every project is one `Assignment` with an ordered list of `stages`:
 
 | Piece | Purpose |
 |-------|---------|
-| `brief` (Markdown) | The prompt/question the learner solves |
-| `learningObjectives` | What the learner should walk away knowing |
-| `starter` (file map) | Code the learner begins from |
-| `tests` (file map) | Automated checks; green = done |
-| `solution` (file map) | Reference solution, revealed on demand |
-| `hints` | Progressive nudges |
+| `stages[]` | Ordered steps, revealed one at a time as each passes |
+| `stage.brief` (Markdown) | Teaches the concept and states the step's task |
+| `stage.starter` (file map) | A step's checkpoint (= previous step's solution) |
+| `stage.tests` (file map) | Cumulative automated checks; green = step done |
+| `stage.solution` (file map) | Reference solution through this step |
+| `stage.hints` | Progressive nudges |
 
-Adding a track = adding a `Track` object with an array of these. No app changes
-required unless a track needs a new Sandpack template (e.g. `vanilla` for
-HTML/CSS/JS).
+The student's code is **carried forward** between stages, so the whole project
+builds a single artifact. Adding a project = adding one `Assignment` with stages;
+no app changes needed unless a new Sandpack template is required.
 
-## Authoring order
-
-Tracks are ordered to match a realistic learning path. Each builds on the last.
+## React track — project sequence
 
 ```mermaid
 graph LR
-  HTML --> CSS --> JS[JavaScript] --> TS[TypeScript] --> React
-  React --> Testing
-  React --> A11y[Accessibility]
-  React --> Perf[Performance]
+  P1[1 · Tic-Tac-Toe] --> P2[2 · Todo App] --> P3[3 · Quiz / Weather] --> P4[4 · App with Routing]
 ```
 
-> Note: React shipped first (v1) to validate the platform, even though in the
-> learning path it sits after the fundamentals. The fundamentals tracks below are
-> authored next so the path reads top-to-bottom.
+### Project 1 — Tic-Tac-Toe ✅ shipped
 
-## Track plan
+Fundamentals, from scratch. 6 stages: components & props → state & lifting state
+up → turns → status & guards → derive a winner → reset.
 
-Each track targets **8–12 assignments**, intro → hard.
+**Concepts:** components, JSX, props & composition, `useState`, events, lists &
+keys, lifting state up, conditional + derived state, immutable updates.
 
-### 1. HTML
+### Project 2 — Todo App (next)
 
-- Sandpack template: `vanilla` (or `static`)
-- Checks: parse rendered DOM and assert structure/roles via testing-library
-- Topics: document structure, semantic elements, links & images, lists, tables,
-  forms & inputs, labels & `for`, landmarks, metadata/SEO basics
+A classic, building straight on Project 1's state skills.
 
-### 2. CSS
+**Concepts:** controlled inputs/forms, `useReducer`, add/remove/toggle items,
+deriving filtered lists, persisting to `localStorage`.
+**Likely stages:** render a static list → controlled "add" input → add via
+reducer → toggle complete → delete → filter (all/active/done) → persist.
 
-- Template: `vanilla`
-- Checks: assert computed styles / layout via the preview DOM, plus visual briefs
-- Topics: selectors & specificity, box model, units, flexbox, grid, positioning,
-  responsive design & media queries, transitions, a small layout build
+### Project 3 — Quiz / Weather (data & effects)
 
-### 3. JavaScript
+Introduces talking to the outside world.
 
-- Template: `vanilla-ts` (types stripped) or `vanilla`
-- Checks: pure unit tests on exported functions
-- Topics: variables & scope, functions & closures, arrays (`map`/`filter`/
-  `reduce`), objects & destructuring, the DOM API, events, fetch & promises,
-  `async`/`await`, modules
+**Concepts:** `useEffect`, data fetching & `async`/`await`, loading/error states,
+custom hooks (e.g. `useFetch`), cleanup.
+**Likely stages:** static question → answer & score → next/results → load
+questions with `useEffect` → loading & error UI → extract a custom hook.
 
-### 4. TypeScript
+### Project 4+ — Larger app
 
-- Template: `vanilla-ts`
-- Checks: unit tests + type-level assertions (`expect-type` style helpers)
-- Topics: primitives & inference, unions & narrowing, interfaces vs types,
-  generics, utility types, typing functions, typing React props/hooks
+**Concepts:** context & global state, client-side routing, `useMemo`/
+`useCallback` & render performance, error boundaries, suspense, component
+patterns (compound components, render props), and writing tests.
 
-### 5. React (shipped — v1)
+> Concept coverage check: Projects 1–3 cover everything the original standalone
+> exercises did (props, state, lifting, lists, conditional/derived state,
+> controlled forms, `useReducer`, `useEffect`, custom hooks) — each taught where
+> it belongs in a real app — then Project 4+ extends into advanced territory.
 
-- Template: `react-ts`
-- 10 assignments: first component, props, `useState`, conditional rendering,
-  lists & keys, controlled forms, lifting state, `useEffect`, custom hooks,
-  `useReducer`
-- **Next additions:** context, `useMemo`/`useCallback`, refs & the DOM, data
-  fetching patterns, error boundaries, suspense
+## Other tracks (planned)
 
-### 6. Testing
+Same project-based model. Each becomes a short sequence of projects rather than a
+list of drills.
 
-- Template: `react-ts`
-- Checks: meta — the learner writes the tests; we assert their tests catch
-  seeded bugs
-- Topics: testing-library queries, user events, mocking, async assertions,
-  integration tests, intro to E2E concepts
-
-### 7. Accessibility
-
-- Template: `react-ts`
-- Checks: role/name/label assertions, keyboard interaction, `axe` smoke checks
-- Topics: semantic HTML wins, ARIA roles/states, focus management, keyboard nav,
-  forms & errors, color contrast, accessible components
-
-### 8. Performance
-
-- Template: `react-ts`
-- Checks: render-count assertions, memoization correctness, bundle reasoning
-- Topics: avoiding re-renders, memoization, list virtualization concepts,
-  code-splitting, measuring with the Profiler, Core Web Vitals literacy
+| Track | Template | Example projects |
+|-------|----------|------------------|
+| HTML | `vanilla` | a semantic article page, an accessible form |
+| CSS | `vanilla` | a responsive card layout, a pricing grid |
+| JavaScript | `vanilla-ts` | a DOM to-do, a fetch-driven search |
+| TypeScript | `vanilla-ts` | typing a small library, typing React props/hooks |
+| Testing | `react-ts` | test-drive features against seeded bugs |
+| Accessibility | `react-ts` | make an inaccessible widget accessible |
+| Performance | `react-ts` | fix re-render and bundle problems |
 
 ## Future platform features (post-content)
 
-These are deferred until the curriculum has breadth. None block authoring.
+Deferred until the curriculum has breadth. None block authoring.
 
 - [ ] **Backend (optional):** account + cross-device progress sync. Today
-      progress lives in `localStorage`; a thin API + DB would sync it. Keep the
-      content as files either way.
-- [ ] **Content authoring DX:** a script/CLI to scaffold a new assignment file.
-- [ ] **Multi-file diff view** for solutions (side-by-side starter vs solution).
-- [ ] **Per-assignment notes** the learner can keep.
-- [ ] **Search** across tracks/assignments.
-- [ ] **Streaks / XP** lightweight gamification (only if it aids motivation).
+      progress and in-progress code live in `localStorage`.
+- [ ] **Content authoring DX:** a script to scaffold a new project file.
+- [ ] **Side-by-side diff** of the student's code vs the step solution.
+- [ ] **Per-project notes** the learner can keep.
+- [ ] **Search** across tracks/projects.
 - [ ] **Deploy:** the app is a static SPA — host on any static platform.
 
-## Definition of done for a new track
+## Definition of done for a new project
 
-1. `Track` object authored with 8–12 assignments.
-2. Every assignment's tests pass against its own `solution`.
-3. Every assignment's tests **fail** against its `starter` (so they're real).
-4. Briefs reviewed for clarity; hints are progressive.
-5. Track flipped from `planned` to `available` in `src/content/tracks.ts`.
+1. One `Assignment` with an ordered `stages` array.
+2. For every stage: its `tests` **pass** against that stage's `solution`.
+3. For every stage: its `tests` **fail** against its `starter` (the previous
+   stage's solution) — so each step gates on its new requirement.
+4. Briefs teach the concept (not just state the task); hints are progressive.
+5. Verified by `npm run verify:content` (checks every stage).

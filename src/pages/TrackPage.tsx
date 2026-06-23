@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { getTrack } from '../content/tracks'
+import { getStages } from '../types'
 import { useProgress } from '../hooks/useProgress'
 import { Markdown } from '../components/Markdown'
 import { DifficultyBadge, StatusBadge } from '../components/ui'
@@ -56,6 +57,9 @@ export function TrackPage() {
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <StatusBadge status={status} />
                     <span className="text-xs text-muted">
+                      {getStages(a).length > 1 && (
+                        <>{getStages(a).length} steps · </>
+                      )}
                       ~{a.estimatedMinutes} min
                     </span>
                   </div>
