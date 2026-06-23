@@ -5,7 +5,6 @@ export const reactTrack: Track = {
   slug: 'react',
   title: 'React',
   tagline: 'Learn React by building real projects, one step at a time.',
-  icon: '⚛️',
   status: 'available',
   description: `
 This track teaches React the way you actually get good at it: by **building real

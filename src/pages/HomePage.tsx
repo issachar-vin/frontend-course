@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { tracks } from '../content/tracks'
 import { useProgress } from '../hooks/useProgress'
+import { TrackIcon } from '../lib/icons'
 
 export function HomePage() {
   const { statusOf } = useProgress()
@@ -37,7 +38,9 @@ export function HomePage() {
               }`}
             >
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-3xl">{track.icon}</span>
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-2 text-brand">
+                  <TrackIcon slug={track.slug} className="h-6 w-6" />
+                </span>
                 {planned ? (
                   <span className="rounded bg-border/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted">
                     Coming soon

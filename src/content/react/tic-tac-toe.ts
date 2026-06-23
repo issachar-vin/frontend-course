@@ -602,7 +602,7 @@ Finish the game with a reset so you can play another round.
 - Clicking it clears the board and returns the turn to \`X\`
 
 > [!NOTE]
-> 🎉 You've built a complete, playable game **from scratch** — composing
+> You've built a complete, playable game **from scratch** — composing
 > components and props, owning and lifting state, handling events, rendering a
 > list with keys, and using derived + conditional state. Those are the core React
 > skills, learned in one real project instead of ten disconnected drills.
