@@ -14,7 +14,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tracks } from '../src/content/tracks'
-import type { FileMap } from '../src/types'
+import { getStages, type FileMap } from '../src/types'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(here, '..')
@@ -58,20 +58,27 @@ rmSync(workRoot, { recursive: true, force: true })
 for (const track of tracks) {
   if (track.status !== 'available') continue
   for (const a of track.assignments) {
-    const base = join(workRoot, track.slug, a.slug)
+    const stages = getStages(a)
+    stages.forEach((stage, i) => {
+      const label =
+        stages.length > 1 ? `${a.slug} [${i + 1}/${stages.length}]` : a.slug
+      const base = join(workRoot, track.slug, a.slug, String(i))
 
-    const solDir = join(base, 'solution')
-    writeFiles(solDir, a.solution, a.tests)
-    const solutionPasses = runVitest(solDir)
+      const solDir = join(base, 'solution')
+      writeFiles(solDir, stage.solution, stage.tests)
+      const solutionPasses = runVitest(solDir)
 
-    const startDir = join(base, 'starter')
-    writeFiles(startDir, a.starter, a.tests)
-    const starterFails = !runVitest(startDir)
+      // Each stage's checkpoint (its starter, i.e. the previous stage's
+      // solution) must NOT yet satisfy this stage's tests.
+      const startDir = join(base, 'starter')
+      writeFiles(startDir, stage.starter, stage.tests)
+      const starterFails = !runVitest(startDir)
 
-    results.push({
-      name: `${track.slug}/${a.slug}`,
-      solutionPasses,
-      starterFails,
+      results.push({
+        name: `${track.slug}/${label}`,
+        solutionPasses,
+        starterFails,
+      })
     })
   }
 }
@@ -86,11 +93,11 @@ for (const r of results) {
   const pass = r.solutionPasses && r.starterFails
   if (!pass) ok = false
   console.log(
-    `${pass ? '✓' : '✗'}  ${r.name.padEnd(34)} solution-passes:${sol}  starter-fails:${start}`,
+    `${pass ? '✓' : '✗'}  ${r.name.padEnd(40)} solution-passes:${sol}  starter-fails:${start}`,
   )
 }
 console.log(
-  `\n${results.length} assignments, ${results.filter((r) => r.solutionPasses && r.starterFails).length} valid\n`,
+  `\n${results.length} stage checks, ${results.filter((r) => r.solutionPasses && r.starterFails).length} valid\n`,
 )
 
 process.exit(ok ? 0 : 1)

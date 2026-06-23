@@ -5,6 +5,8 @@ export type AssignmentStatus = 'not_started' | 'attempted' | 'passed'
 interface ProgressState {
   /** key: `${trackSlug}/${assignmentSlug}` -> status */
   status: Record<string, AssignmentStatus>
+  /** key -> furthest stage index the student has reached (for resume) */
+  stage: Record<string, number>
 }
 
 const STORAGE_KEY = 'fe-course.progress.v1'
@@ -12,11 +14,11 @@ const STORAGE_KEY = 'fe-course.progress.v1'
 function read(): ProgressState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { status: {} }
-    const parsed = JSON.parse(raw) as ProgressState
-    return { status: parsed.status ?? {} }
+    if (!raw) return { status: {}, stage: {} }
+    const parsed = JSON.parse(raw) as Partial<ProgressState>
+    return { status: parsed.status ?? {}, stage: parsed.stage ?? {} }
   } catch {
-    return { status: {} }
+    return { status: {}, stage: {} }
   }
 }
 
@@ -58,7 +60,20 @@ export function setStatus(
   // Never downgrade a passed assignment to attempted on revisit.
   if (current === 'passed' && status === 'attempted') return
   if (current === status) return
-  state = { status: { ...state.status, [k]: status } }
+  state = { ...state, status: { ...state.status, [k]: status } }
+  persist()
+  emit()
+}
+
+export function setStage(
+  trackSlug: string,
+  assignmentSlug: string,
+  stageIndex: number,
+) {
+  const k = key(trackSlug, assignmentSlug)
+  // Only ever advance the recorded furthest stage.
+  if ((state.stage[k] ?? 0) >= stageIndex) return
+  state = { ...state, stage: { ...state.stage, [k]: stageIndex } }
   persist()
   emit()
 }
@@ -72,5 +87,11 @@ export function useProgress() {
     [snapshot],
   )
 
-  return { statusOf, setStatus }
+  const stageOf = useCallback(
+    (trackSlug: string, assignmentSlug: string): number =>
+      snapshot.stage[key(trackSlug, assignmentSlug)] ?? 0,
+    [snapshot],
+  )
+
+  return { statusOf, stageOf, setStatus, setStage }
 }
